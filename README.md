@@ -3,8 +3,8 @@ Python scripts for backtesting and running algorithmic trades on https://alpaca.
 
 # Usage
 ## Requirements
-1. Python package `alpaca_backtrader_api`
-2. Python package `backtrader`
+1. Python package `alpaca_backtrader_api` https://github.com/alpacahq/alpaca-trade-api-python
+2. Python package `backtrader` https://www.backtrader.com/docu/installation/
 
 ## Manually running
 After pip installing the requisite python packages:
