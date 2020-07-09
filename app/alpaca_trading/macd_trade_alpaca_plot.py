@@ -7,8 +7,8 @@ import getopt
 import sys
 import logging
 
-ALPACA_API_KEY = os.environ.get('APCA_API_KEY_ID')
-ALPACA_SECRET_KEY = os.environ.get('APCA_API_SECRET_KEY')
+ALPACA_API_KEY = os.environ.get('API_ID')
+ALPACA_SECRET_KEY = os.environ.get('API_SECRET')
 ALPACA_PAPER = True
 
 store = alpaca_backtrader_api.AlpacaStore(
@@ -17,12 +17,13 @@ store = alpaca_backtrader_api.AlpacaStore(
     paper=ALPACA_PAPER
 )
 
+logging.basicConfig(filename='trade.log', level=logging.INFO)
 
 class MacdAlpacaStrategy(bt.Strategy):
 
     def log(self, txt, dt=None):
         dt = dt or self.datas[0].datetime.date(0)
-        logging.info('%s, %s' % (dt.isoformat(), txt))
+        print('%s, %s' % (dt.isoformat(), txt))
 
     def __init__(self):
         # Keep a reference to the "close" line in the data[0] dataseries
@@ -31,10 +32,10 @@ class MacdAlpacaStrategy(bt.Strategy):
         self.order = None
 
     def notify_order(self, order):
-        logging.info('Callback: notify_order')
+        print('Callback: notify_order')
         if order.status in [order.Submitted, order.Accepted]:
             # Buy/Sell order submitted/accepted to/by broker - Nothing to do
-            logging.info(order.status)
+            print(order.status)
             return
 
         # Check if an order has been completed
@@ -70,18 +71,18 @@ class MacdAlpacaStrategy(bt.Strategy):
         now = datetime.now()
 
         if check_date(self.datas[0].datetime.date(0)):
-            logging.info('Current date reached')
+            print('Current date reached')
 
             # Check if an order is pending ... if yes, we cannot send a 2nd one
             if self.order:
-                logging.info("Order pending, returning")
+                print("Order pending, returning")
                 logging.info('{} Order pending, returning'.format(now))
                 return
 
             # Check if we are in the market
             if not self.position:
                 logging.info('{} No position, checking for buy signal'.format(now))
-                logging.info('No position, checking for buy signal')
+                print('No position, checking for buy signal')
                 # Check if we should buy: MACD
                 if (self.macd[0] > self.macd.signal[0]) and (self.macd[-1] < self.macd.signal[-1]):
                     self.log('MACD crossed above, buy signal')
@@ -89,17 +90,16 @@ class MacdAlpacaStrategy(bt.Strategy):
                     logging.info('{} Buy signal triggered'.format(now))
                     self.order = self.buy(data=self.datas[0], size=3, exectype=bt.Order.Market)
                 else:
-                    logging.info('No buy signal at this time')
-                    logging.info('No buy signal at this time')
+                    print('No buy signal at this time')
             else:
-                logging.info('Already have position in market, checking for sell signal')
+                print('Already have position in market, checking for sell signal')
                 logging.info('{} Already have position, checking for sell signal'.format(now))
                 if (self.macd[0] < self.macd.signal[0]) and (self.macd[-1] > self.macd.signal[-1]):
                     logging.info('{} Sell signal triggered'.format(now))
                     self.log('SELL CREATE, %.2f' % self.dataclose[0])
                     self.order = self.sell()
                 else:
-                    logging.info('No sell signal at this time')
+                    print('No sell signal at this time')
 
 
 def check_date(bt_date):
@@ -110,8 +110,6 @@ def check_date(bt_date):
 
 
 def trade(ticker):
-    logfname = '{}_tradelog.log'.format(ticker)
-    logging.basicConfig(filename=logfname, level=logging.INFO)
     cerebro = bt.Cerebro()
     cerebro.addstrategy(MacdAlpacaStrategy)
     broker = store.getbroker()  # or just alpaca_backtrader_api.AlpacaBroker()
@@ -121,8 +119,8 @@ def trade(ticker):
         ad = AlpacaData()
         csv_file = ad.create_d_stock_csv(ticker, 90)
     except Exception as e:
-        logging.info('Issue with alpaca_data:')
-        logging.info(e)
+        print('Issue with alpaca_data:')
+        print(e)
         exit(2)
 
     data = bt.feeds.GenericCSVData(
@@ -138,9 +136,9 @@ def trade(ticker):
         openinterest=-1
     )
     cerebro.adddata(data)
-    logging.info('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
+    print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
     cerebro.run()
-    logging.info('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
+    print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
     #cerebro.plot()
 
 

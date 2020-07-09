@@ -1,6 +1,8 @@
 from app.alpaca_trading.macd_trade_alpaca import trade
 import getopt
 import sys
+import time
+import alpaca_trade_api
 
 if __name__ == '__main__':
     try:
@@ -21,4 +23,11 @@ if __name__ == '__main__':
             print(a)
             ticker = a
 
-    trade(ticker)
+    while True:
+        api = alpaca_trade_api.REST()
+        if api.get_clock().is_open:
+            trade(ticker)
+            time.sleep(60 * 60)     # Run every 60 mins 
+        else:
+            print('market close at this time')
+            time.sleep(60 * 60)
